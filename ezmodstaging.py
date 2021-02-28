@@ -1,6 +1,12 @@
 from pathlib import Path 
 import shutil
 import sys
+import tkinter as tk
+
+
+"""***************************************
+                Methods
+***************************************"""
 
 #This creates the mod data list, based off the directories in somePath
 def printConfig(somePath): 
@@ -36,11 +42,46 @@ def pathExists(somePath):
         pass 
     return (result)
 
+"""********************************
+
+    Classes
+
+********************************"""
 
 
 
-"""
+"""********************************
+
     The main part of the program 
+    
+********************************"""
+class modstage(tk.Frame):
+    def __init__(self, master=None):
+        super().__init__(master)
+        self.pack()
+        
+        
+
+
+
+#Sets up the GUI's execution loop, to run for the program lifetime 
+
+window_main = tk.Tk(className='OpenMW Mod Stager')
+window_main.geometry("400x200")
+
+frame_1 = tk.Frame(window_main, bg='#c4ffd2', width=200, height=50)
+
+app = modstage()
+
+frame = ttk.frame(app) 
+ 
+
+app.mainloop()
+
+
+
+
+#The command line implementation of mod staging, to be replaced by a GUI version. 
 """
 modList = []
 configLoc = ""
@@ -115,38 +156,4 @@ try:
                 configFile.write(cur)
 except IOError:
     sys.exit("IO Error!")
-
-"""
-#This is the main part of the program 
-modStagingFolder = ""
-configPlace = ""
-if(len(sys.argv) == 2 and (isPath(sys.argv[1]) == True)):
-    modStagingFolder = sys.argv[1]
-elif(len(sys.argv) == 3):
-    if((isPath(sys.argv[1]) == True)):
-        modStagingFolder = sys.argv[1]
-    if(isConfig(sys.argv[2] == True)):
-        configPlace = sys.argv[2]
-
-
-#Accepts user input for the mod staging folder, if that is not already specified 
-while (modStagingFolder == ""):
-    modStagingFolder = input("Please enter your mod staging folder URI here. (No quotes needed)\n") 
-    if (isPath(modStagingFolder) == False):
-        if(modStagingFolder == "" or modStagingFolder.lower() == "no" or modStagingFolder.lower() == "quit" or modStagingFolder.lower() == "n"):
-            sys.exit("Okay.")
-        else:
-            modStagingFolder = ""
-            print("Invalid input!", end=" ") 
- 
-while (modStagingFolder == ""):
-    modStagingFolder = input("Please enter your mod staging folder URI here. (No quotes needed)\n") 
-    if (isPath(modStagingFolder) == False):
-        if(modStagingFolder == "" or modStagingFolder.lower() == "no" or modStagingFolder.lower() == "quit" or modStagingFolder.lower() == "n"):
-            sys.exit("Okay.")
-        else:
-            modStagingFolder = ""
-            print("Invalid input!", end=" ") 
-            
-"""
- 
+ """
