@@ -4,13 +4,15 @@ import sys
 
 #This creates the mod data list, based off the directories in somePath
 def printConfig(somePath): 
-    
-    txt_folder = Path(somePath) 
-    folderBetter = txt_folder.iterdir()
     rest = [] 
-    for cur in folderBetter:
-        if(cur.is_dir() == True):  
-            rest.append("data=\"" + str(cur) + "\\Data Files\"\n")
+    try: 
+        txt_folder = Path(somePath) 
+        folderBetter = txt_folder.iterdir()
+        for cur in folderBetter:
+            if(cur.is_dir() == True):  
+                rest.append("data=\"" + str(cur) + "\\Data Files\"\n")
+    except FileNotFoundError: 
+        pass
     return rest
 
 
@@ -93,8 +95,7 @@ for raw in modList:
     if (isPath(cur) == True):
         stagingFolderLocations = stagingFolderLocations + (printConfig(cur))
 
-
-print(stagingFolderLocations)
+ 
 
 configLines = []
 
@@ -115,7 +116,8 @@ try:
                 configFile.write(cur)
 except IOError:
     sys.exit("IO Error!")
-
+except FileNotFoundError: 
+    print("File not found! Will move on to next.") 
 """
 #This is the main part of the program 
 modStagingFolder = ""
