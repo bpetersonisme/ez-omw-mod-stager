@@ -1,6 +1,7 @@
 from pathlib import Path 
 import shutil
 import sys
+import re
 
 #This creates the mod data list, based off the directories in somePath
 def printConfig(somePath): 
@@ -14,6 +15,25 @@ def printConfig(somePath):
     except FileNotFoundError: 
         pass
     return rest
+
+#Returns a version of the target list without any entries it shares with blacklist 
+def breakMatches(target, blacklist): 
+    if (blacklist == [] or target == []):
+        return (target)
+    result = []
+    for x in target: 
+        if x not in blacklist: 
+            result.append(x)
+    return (result)
+
+#Returns a version of the target list with only lines that match the specified regular expression  
+def filterForLines(target, regex='[dD][aA][tT][aA] *= *".*"'): 
+    result = [] 
+    for cur in target:  
+        hasMatch = re.match(regex, cur) 
+        if(bool(hasMatch) == True):
+            result.append(cur)  
+    return result
 
 
 #Returns true if the string input is a valid directory, and false otherwise
@@ -43,112 +63,81 @@ def pathExists(somePath):
 
 """
     The main part of the program 
-"""
-modList = []
-configLoc = ""
+"""     
+if __name__ == "__main__":
+    modList = []
+    configLoc = ""
 
-#This creates the config file if, for some reason, it doesn't exist yet 
-try: 
-    conFile = open('modlist.cfg', 'x') 
-    conFile.close()
-except FileExistsError:
-    pass
+    #This creates the config file if, for some reason, it doesn't exist yet 
+    try: 
+        conFile = open('modlist.cfg', 'x') 
+        conFile.close()
+    except FileExistsError:
+        pass
+        
+    #This part reads the mod staging folder and config list, if there is anything to read. 
+    try: 
+        with open('modlist.cfg') as thisFile:     
+            stageList = thisFile.readlines() 
+            if (len (stageList) < 2):
+                sys.exit('Either you have entered no config folder location, or you do not have any mod staging folders. Either way, there is nothing to be done by this program. Goodbye.')
+            else:
+                modList = stageList.copy() 
+                configLoc = modList.pop()
+    except IOError:
+        sys.exit("Do not have permission to perform this operation!")
+    #Checks to see if the path given to the config file is valid 
+    try: 
+        if(isConfig(configLoc) == False):
+            sys.exit("Fatal Error: Config file not found!")
+    except OSError: 
+        sys.exit("Fatal Error: The path \"" + configLoc + "\" is not valid for your operating system")
+    #Saves the original config file, if it does not exist already
+    try: 
+        confPath = Path(configLoc)
+        oldConf = str(confPath.parent) + "\\openmwOLD"
+        if(pathExists(oldConf + ".cfg") == False):
+            oldConf = oldConf + ".cfg"
+            shutil.copy(configLoc, oldConf)
+    #    with open(configLoc, 'w') as omwConfig:        
+    except IOError: 
+        sys.exit("IO Error!")
+
+
+    stagingFolderLocations = [] 
+    #This part creates an iterable list of all mod folders specified 
+    for raw in modList: 
+        cur = raw[0:-1]  
+        if (isPath(cur) == True):
+            stagingFolderLocations = stagingFolderLocations + (printConfig(cur))
+
+    configLines = []
     
-#This part reads the mod staging folder and config list, if there is anything to read. 
-try: 
-    with open('modlist.cfg') as thisFile:     
-        stageList = thisFile.readlines() 
-        if (len (stageList) < 2):
-            sys.exit('Either you have entered no config folder location, or you do not have any mod staging folders. Either way, there is nothing to be done by this program. Goodbye.')
-        else:
-            modList = stageList.copy() 
-            configLoc = modList.pop()
-except IOError:
-    sys.exit("Do not have permission to perform this operation!")
-#Checks to see if the path given to the config file is valid 
-try: 
-    if(isConfig(configLoc) == False):
-        sys.exit("Fatal Error: Config file not found!")
-except OSError: 
-    sys.exit("Fatal Error: The path \"" + configLoc + "\" is not valid for your operating system")
-    
-try: 
-    confPath = Path(configLoc)
-    oldConf = str(confPath.parent) + "\\openmwOLD"
-    if(pathExists(oldConf + ".cfg")):
-        i = 1 
-        while(pathExists(oldConf + " (" + str(i) + ").cfg")):
-            i = i + 1
-        oldConf = oldConf + " (" + str(i) + ").cfg"
-    else:
-        oldConf = oldConf + ".cfg"
-    shutil.copy(configLoc, oldConf)
-#    with open(configLoc, 'w') as omwConfig:        
-except IOError: 
-    sys.exit("IO Error!")
+    try:
+        #Reads the config file into a list 
+        with open(configLoc) as origConfig: 
+            configLines = origConfig.readlines()
+        dataLines = filterForLines(configLines)
+        for check in stagingFolderLocations:
+            print (check)
+        stagingFolderLocations = breakMatches(stagingFolderLocations, dataLines)
+        
 
-
-stagingFolderLocations = [] 
-#This part creates an iterable list of all mod folders specified 
-for raw in modList: 
-    cur = raw[0:-1]  
-    if (isPath(cur) == True):
-        stagingFolderLocations = stagingFolderLocations + (printConfig(cur))
-
- 
-
-configLines = []
-
-try:
-    with open(configLoc) as origConfig: 
-        configLines = origConfig.readlines()
-    with open(configLoc, 'w') as configFile:
-        inData = False 
-        for cur in configLines:
-            if("data=" not in cur):
-                if(inData == True): 
-                    for thisData in stagingFolderLocations: 
-                        configFile.write(thisData) 
+        
+        #Puts the finished config file together 
+        with open(configLoc, 'w') as configFile:
+            inData = False 
+            for cur in configLines:
+                if("data=" not in cur):
+                    if(inData == True): 
+                        for thisData in stagingFolderLocations: 
+                            configFile.write(thisData) 
                         inData = False
-                configFile.write(cur)
-            else: 
-                inData = True
-                configFile.write(cur)
-except IOError:
-    sys.exit("IO Error!")
-except FileNotFoundError: 
-    print("File not found! Will move on to next.") 
-"""
-#This is the main part of the program 
-modStagingFolder = ""
-configPlace = ""
-if(len(sys.argv) == 2 and (isPath(sys.argv[1]) == True)):
-    modStagingFolder = sys.argv[1]
-elif(len(sys.argv) == 3):
-    if((isPath(sys.argv[1]) == True)):
-        modStagingFolder = sys.argv[1]
-    if(isConfig(sys.argv[2] == True)):
-        configPlace = sys.argv[2]
-
-
-#Accepts user input for the mod staging folder, if that is not already specified 
-while (modStagingFolder == ""):
-    modStagingFolder = input("Please enter your mod staging folder URI here. (No quotes needed)\n") 
-    if (isPath(modStagingFolder) == False):
-        if(modStagingFolder == "" or modStagingFolder.lower() == "no" or modStagingFolder.lower() == "quit" or modStagingFolder.lower() == "n"):
-            sys.exit("Okay.")
-        else:
-            modStagingFolder = ""
-            print("Invalid input!", end=" ") 
- 
-while (modStagingFolder == ""):
-    modStagingFolder = input("Please enter your mod staging folder URI here. (No quotes needed)\n") 
-    if (isPath(modStagingFolder) == False):
-        if(modStagingFolder == "" or modStagingFolder.lower() == "no" or modStagingFolder.lower() == "quit" or modStagingFolder.lower() == "n"):
-            sys.exit("Okay.")
-        else:
-            modStagingFolder = ""
-            print("Invalid input!", end=" ") 
-            
-"""
- 
+                    configFile.write(cur)
+                else: 
+                    inData = True
+                    configFile.write(cur)
+    except IOError:
+        sys.exit("IO Error!")
+    except FileNotFoundError: 
+        print("File not found! Will move on to next.") 
