@@ -176,8 +176,7 @@ if __name__ == "__main__":
             #    configFile.write(cur)
             inData = False 
             for cur in configLines:
-                if("data=" not in cur):
-                    if(inData == True): 
+                if(inData is True): 
                         for thisData in stagingFolderLocations: 
                             configFile.write(thisData) 
                         inData = False
